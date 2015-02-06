@@ -1,0 +1,30 @@
+{
+    "name": "dzasa/maratus-php-backup",
+    "description": "Backup MySQL database using Email, FTP, Local storage, Online file storage like Google Drive, Dropbox",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["php", "backup", "mysql", "database"],
+    "homepage": "http://github.com/dzasa/maratus-php-backup",
+    "autoload": {
+        "psr-4": {
+            "Dzasa\\MaratusPhpBackup\\": "src"
+        }
+    },
+    "require": {
+        "php": ">=5.5.9",
+        "alchemy/zippy": "0.2.*@dev",
+        "google/apiclient": "1.1.*@dev",
+        "dropbox/dropbox-sdk": "1.1.*",
+        "phpseclib/phpseclib": "0.3.*@dev",
+        "barracuda/copy": "dev-master"
+    },
+    "suggest": {
+    },
+    "authors": [
+        {
+            "name": "Jasenko Rakovic",
+            "email": "naucnik@gmail.com",
+            "role": "Developer"
+        }
+    ]
+}
