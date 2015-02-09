@@ -183,7 +183,6 @@ class Couchdb {
 		} else {
 			$this->backupFilename = rtrim($this->backupFilename, "/") . "/";
 			$couchDbConfigCommand = "ls -a " . $this->databaseDir;
-			$ssh->write($couchDbConfigCommand . "\n");
 			$output = explode("\n", $ssh->exec($couchDbConfigCommand));
 			$filesToDownload = [];
 
