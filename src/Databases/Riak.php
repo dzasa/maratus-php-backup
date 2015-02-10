@@ -240,7 +240,17 @@ class Riak {
 						$scp->get($backupTmpName . '.tar.gz', $this->backupPath . $this->backupFilename . rtrim($bcDir, "/") . '.tar.gz');
 					}
 
-					$ssh->exec("\rm " . $backupTmpName . '.tar.gz');
+					$ssh->exec("\\rm " . $backupTmpName . '.tar.gz');
+				} else if ($this->remoteCompress == "zip") {
+					$remoteCompressCommand = 'zip -q -r ' . $backupTmpName . '.zip ' . $this->bitcaskPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
+
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.zip', $this->backupPath . $this->backupFilename . rtrim($bcDir, "/") . '.zip');
+
+					}
+
+					$ssh->exec("\\rm " . $backupTmpName . '.zip');
 				}
 			} else {
 
@@ -302,6 +312,15 @@ class Riak {
 					}
 
 					$ssh->exec("\\rm " . $backupTmpName . '.tar.gz');
+				} else if ($this->remoteCompress == "zip") {
+					$remoteCompressCommand = 'zip -q -r ' . $backupTmpName . '.zip ' . $this->levelDbPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
+
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.zip', $this->backupPath . $this->backupFilename . rtrim($ldbDir, "/") . '.zip');
+					}
+
+					$ssh->exec("\\rm " . $backupTmpName . '.zip');
 				}
 			} else {
 
@@ -402,6 +421,15 @@ class Riak {
 					}
 
 					$ssh->exec("\\rm " . $backupTmpName . '.tar.gz');
+				} else if ($this->remoteCompress == "zip") {
+					$remoteCompressCommand = 'zip -q -r ' . $backupTmpName . '.zip ' . $this->strongConsistencyPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
+
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.zip', $this->backupPath . $this->backupFilename . rtrim($SCDir, "/") . '.zip');
+					}
+
+					$ssh->exec("\rm " . $backupTmpName . '.zip');
 				}
 			} else {
 
