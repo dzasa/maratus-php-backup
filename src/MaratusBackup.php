@@ -38,7 +38,7 @@ class MaratusBackup {
 	 *
 	 * @var string $archive
 	 */
-	private $archiveType = "zip";
+	private $archiveType = "tar.gzip";
 
 	/**
 	 * Array of files to be stored on backup storage
@@ -288,6 +288,12 @@ class MaratusBackup {
 					);
 				}
 			}
+
+			/**
+			 * Remove backup file from disk
+			 */
+			$filesystem = new Filesystem();
+			$filesystem->remove($fileToStore['file_path']);
 		}
 	}
 

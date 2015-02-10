@@ -5,6 +5,7 @@ namespace Dzasa\MaratusPhpBackup\Databases;
 use Crypt_RSA;
 use Net_SCP;
 use Net_SSH2;
+use Symfony\Component\Process\Process;
 
 class Riak {
 
@@ -18,6 +19,7 @@ class Riak {
 	private $bitcaskPath = "";
 	private $levelDbPath = "";
 	private $strongConsistencyPath = "";
+	private $remoteCompress = "tar.gz";
 	private $backupPath = "";
 	private $backupFilename = "";
 	private $result = array(
@@ -67,6 +69,10 @@ class Riak {
 			$this->strongConsistencyPath = rtrim($config['strong_consistency_path'], "/") . "/";
 		}
 
+		if (isset($config['remote_compress'])) {
+			$this->remoteCompress = $config['remote_compress'];
+		}
+
 		$this->backupPath = $config['backup_path'];
 
 		$this->backupFilename = "all-databases-" . date("Y-m-d-H-i-s");
@@ -100,19 +106,72 @@ class Riak {
 	}
 
 	private function dumpLocal() {
-		$filesystem->mkdir($this->backupPath . $this->backupFilename);
-
-		$copyAllDatabasesCommand = 'cp -Ra ' . $this->databaseDir . '. ' . $this->backupPath . $this->backupFilename;
-		$copyAllDatabases = new Process($copyAllDatabasesCommand);
-
-		$copyAllDatabases->run();
-
-		if (!$copyAllDatabases->isSuccessful()) {
-			$this->result['status'] = 0;
-			$this->result['message'] = $copyAllDatabases->getErrorOutput();
-
+		$filesystem = new \Symfony\Component\Filesystem\Filesystem();
+		/**
+		 * *
+		 * *
+		 * Stop RIAK and do backup
+		 * *
+		 * *
+		 */
+		if ($this->switchLocal(0) == false) {
 			return false;
 		}
+
+		$filesystem->mkdir($this->backupPath . $this->backupFilename);
+		$this->backupFilename = rtrim($this->backupFilename, "/") . "/";
+
+		/**
+		 * Copy bitcask files
+		 */
+		if (is_dir($this->bitcaskPath)) {
+			$bcPath = explode("/", rtrim($this->bitcaskPath, "/"));
+			$bcDir = end($bcPath);
+			$bcDir = rtrim($bcDir, "/") . "/";
+			$filesystem->mkdir($this->backupPath . $this->backupFilename . $bcDir);
+
+			$copyAllBitcaskCommand = 'cp -Ra ' . $this->bitcaskPath . '. ' . $this->backupPath . $this->backupFilename . $bcDir;
+			$copyAllBitcask = new Process($copyAllBitcaskCommand);
+
+			$copyAllBitcask->run();
+		}
+
+		/**
+		 * Copy leveldb files
+		 */
+		if (is_dir($this->levelDbPath)) {
+			$ldbPath = explode("/", rtrim($this->levelDbPath, "/"));
+			$ldbDir = end($ldbPath);
+			$ldbDir = rtrim($ldbDir, "/") . "/";
+			$filesystem->mkdir($this->backupPath . $this->backupFilename . $ldbDir);
+
+			$copyAllLeveldbCommand = 'cp -Ra ' . $this->levelDbPath . '. ' . $this->backupPath . $this->backupFilename . $ldbDir;
+			$copyAllLeveldb = new Process($copyAllLeveldbCommand);
+
+			$copyAllLeveldb->run();
+
+		}
+
+		/**
+		 * Copy Backup Strong consistency
+		 */
+		if (is_dir($this->strongConsistencyPath)) {
+			$sConPath = explode("/", rtrim($this->strongConsistencyPath, "/"));
+			$sConDir = end($sConPath);
+			$sConDir = rtrim($sConDir, "/") . "/";
+			$filesystem->mkdir($this->backupPath . $this->backupFilename . $sConDir);
+
+			$copyAllSConCommand = 'cp -Ra ' . $this->strongConsistencyPath . '. ' . $this->backupPath . $this->backupFilename . $sConDir;
+			$copyAllSCon = new Process($copyAllSConCommand);
+
+			$copyAllSCon->run();
+
+		}
+
+		/**
+		 * Start RIAK again
+		 */
+		$this->switchLocal(1);
 
 		return true;
 	}
@@ -150,8 +209,9 @@ class Riak {
 		 * *
 		 * *
 		 */
-		$stopCommand = "riak stop";
-		$ssh->exec($stopCommand);
+		if ($this->switchRemote(0) == false) {
+			return false;
+		}
 
 		$this->backupFilename = rtrim($this->backupFilename, "/") . "/";
 		if (!is_dir($this->backupPath . $this->backupName)) {
@@ -169,38 +229,55 @@ class Riak {
 			$bcDir = end($bcPath);
 			$bcDir = rtrim($bcDir, "/") . "/";
 
-			if (!is_dir($this->backupPath . $this->backupFilename . $bcDir)) {
-				mkdir($this->backupPath . $this->backupFilename . $bcDir);
-			}
+			if ($this->remoteCompress != false) {
+				$backupTmpName = uniqid();
 
-			$bitcaskFoldersCommand = "ls -d " . $this->bitcaskPath . "*/";
-			$outputBitcask = explode("\n", $ssh->exec($bitcaskFoldersCommand));
+				if ($this->remoteCompress == "tar.gz") {
+					$remoteCompressCommand = 'tar czf ' . $backupTmpName . '.tar.gz ' . $this->bitcaskPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
 
-			foreach ($outputBitcask as $bcValue) {
-				if (trim($bcValue) == "") {
-					continue;
-				} else {
-					$bcPathDirs = explode("/", rtrim($bcValue, "/"));
-					$bcLastDir = end($bcPathDirs);
-
-					if (!is_dir($this->backupPath . $this->backupFilename . $bcDir . $bcLastDir)) {
-						mkdir($this->backupPath . $this->backupFilename . $bcDir . $bcLastDir);
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.tar.gz', $this->backupPath . $this->backupFilename . rtrim($bcDir, "/") . '.tar.gz');
 					}
 
-					$bcLastDir = rtrim($bcLastDir, "/") . "/";
+					$ssh->exec("\rm " . $backupTmpName . '.tar.gz');
+				}
+			} else {
 
-					$bcEachFolderCommand = "ls -a " . $bcValue;
-					$bcEachOutput = explode("\n", $ssh->exec($bcEachFolderCommand));
+				if (!is_dir($this->backupPath . $this->backupFilename . $bcDir)) {
+					mkdir($this->backupPath . $this->backupFilename . $bcDir);
+				}
 
-					foreach ($bcEachOutput as $bcFile) {
-						if (strlen($bcFile) < 3 || substr($bcFile, 0, 1) == '.') {
-							continue;
-						} else {
-							$scp->get($bcValue . $bcFile, $this->backupPath . $this->backupFilename . $bcDir . $bcLastDir . $bcFile);
+				$bitcaskFoldersCommand = "ls -d " . $this->bitcaskPath . "*/";
+				$outputBitcask = explode("\n", $ssh->exec($bitcaskFoldersCommand));
+
+				foreach ($outputBitcask as $bcValue) {
+					if (trim($bcValue) == "") {
+						continue;
+					} else {
+						$bcPathDirs = explode("/", rtrim($bcValue, "/"));
+						$bcLastDir = end($bcPathDirs);
+
+						if (!is_dir($this->backupPath . $this->backupFilename . $bcDir . $bcLastDir)) {
+							mkdir($this->backupPath . $this->backupFilename . $bcDir . $bcLastDir);
+						}
+
+						$bcLastDir = rtrim($bcLastDir, "/") . "/";
+
+						$bcEachFolderCommand = "ls -a " . $bcValue;
+						$bcEachOutput = explode("\n", $ssh->exec($bcEachFolderCommand));
+
+						foreach ($bcEachOutput as $bcFile) {
+							if (strlen($bcFile) < 3 || substr($bcFile, 0, 1) == '.') {
+								continue;
+							} else {
+								$scp->get($bcValue . $bcFile, $this->backupPath . $this->backupFilename . $bcDir . $bcLastDir . $bcFile);
+							}
 						}
 					}
 				}
 			}
+
 		}
 
 		/**
@@ -213,74 +290,90 @@ class Riak {
 			$ldbDir = end($ldbPath);
 			$ldbDir = rtrim($ldbDir, "/") . "/";
 
-			if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir)) {
-				mkdir($this->backupPath . $this->backupFilename . $ldbDir);
-			}
+			if ($this->remoteCompress != false) {
+				$backupTmpName = uniqid();
 
-			$leveldbFoldersCommand = "ls -d " . $this->levelDbPath . "*/";
-			$outputLevelDB = explode("\n", $ssh->exec($leveldbFoldersCommand));
+				if ($this->remoteCompress == "tar.gz") {
+					$remoteCompressCommand = 'tar czf ' . $backupTmpName . '.tar.gz ' . $this->levelDbPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
 
-			foreach ($outputLevelDB as $ldbValue) {
-				if (trim($ldbValue) == "") {
-					continue;
-				} else {
-					$ldbPathDirs = explode("/", rtrim($ldbValue, "/"));
-					$ldbLastDir = end($ldbPathDirs);
-
-					if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir)) {
-						mkdir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir);
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.tar.gz', $this->backupPath . $this->backupFilename . rtrim($ldbDir, "/") . '.tar.gz');
 					}
 
-					$ldbLastDir = rtrim($ldbLastDir, "/") . "/";
+					$ssh->exec("\\rm " . $backupTmpName . '.tar.gz');
+				}
+			} else {
 
-					/**
-					 * Get files from subfolders
-					 */
-					$leveldbSubFoldersCommand = "find $ldbValue -maxdepth 1 -type d";
-					$outputLevelDBSub = explode("\n", $ssh->exec($leveldbSubFoldersCommand));
+				if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir)) {
+					mkdir($this->backupPath . $this->backupFilename . $ldbDir);
+				}
 
-					foreach ($outputLevelDBSub as $ldbSubValue) {
-						if (trim($ldbSubValue) == "" || trim($ldbSubValue) == $ldbValue) {
-							continue;
-						} else {
-							$ldbSubPathDirs = explode("/", rtrim($ldbSubValue, "/"));
-							$ldbLastSubDir = end($ldbSubPathDirs);
+				$leveldbFoldersCommand = "ls -d " . $this->levelDbPath . "*/";
+				$outputLevelDB = explode("\n", $ssh->exec($leveldbFoldersCommand));
 
-							if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir)) {
-								mkdir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir);
-							}
+				foreach ($outputLevelDB as $ldbValue) {
+					if (trim($ldbValue) == "") {
+						continue;
+					} else {
+						$ldbPathDirs = explode("/", rtrim($ldbValue, "/"));
+						$ldbLastDir = end($ldbPathDirs);
 
-							$ldbLastSubDir = rtrim($ldbLastSubDir, "/") . "/";
+						if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir)) {
+							mkdir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir);
+						}
 
-							$ldbEachSubFolderCommand = "ls -a " . $ldbSubValue;
-							$ldbEachSubOutput = explode("\n", $ssh->exec($ldbEachSubFolderCommand));
+						$ldbLastDir = rtrim($ldbLastDir, "/") . "/";
 
-							foreach ($ldbEachSubOutput as $ldbSubFile) {
-								if (strlen($ldbSubFile) < 3 || substr($ldbSubFile, 0, 1) == '.') {
-									continue;
-								} else {
-									$scp->get($ldbValue . $ldbLastSubDir . $ldbSubFile, $this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir . $ldbSubFile);
+						/**
+						 * Get files from subfolders
+						 */
+						$leveldbSubFoldersCommand = "find $ldbValue -maxdepth 1 -type d";
+						$outputLevelDBSub = explode("\n", $ssh->exec($leveldbSubFoldersCommand));
+
+						foreach ($outputLevelDBSub as $ldbSubValue) {
+							if (trim($ldbSubValue) == "" || trim($ldbSubValue) == $ldbValue) {
+								continue;
+							} else {
+								$ldbSubPathDirs = explode("/", rtrim($ldbSubValue, "/"));
+								$ldbLastSubDir = end($ldbSubPathDirs);
+
+								if (!is_dir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir)) {
+									mkdir($this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir);
+								}
+
+								$ldbLastSubDir = rtrim($ldbLastSubDir, "/") . "/";
+
+								$ldbEachSubFolderCommand = "ls -a " . $ldbSubValue;
+								$ldbEachSubOutput = explode("\n", $ssh->exec($ldbEachSubFolderCommand));
+
+								foreach ($ldbEachSubOutput as $ldbSubFile) {
+									if (strlen($ldbSubFile) < 3 || substr($ldbSubFile, 0, 1) == '.') {
+										continue;
+									} else {
+										$scp->get($ldbValue . $ldbLastSubDir . $ldbSubFile, $this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $ldbLastSubDir . $ldbSubFile);
+									}
 								}
 							}
 						}
-					}
 
-					/**
-					 * Add all other files
-					 */
+						/**
+						 * Add all other files
+						 */
 
-					$ldbEachFolderCommand = "find $ldbValue -maxdepth 1 -type f";
+						$ldbEachFolderCommand = "find $ldbValue -maxdepth 1 -type f";
 
-					$ldbEachOutput = explode("\n", $ssh->exec($ldbEachFolderCommand));
+						$ldbEachOutput = explode("\n", $ssh->exec($ldbEachFolderCommand));
 
-					foreach ($ldbEachOutput as $ldbFile) {
-						if (strlen($ldbFile) < 3 || substr($ldbFile, 0, 1) == '.') {
-							continue;
-						} else {
-							$path = explode("/", $ldbFile);
-							$fileName = end($path);
+						foreach ($ldbEachOutput as $ldbFile) {
+							if (strlen($ldbFile) < 3 || substr($ldbFile, 0, 1) == '.') {
+								continue;
+							} else {
+								$path = explode("/", $ldbFile);
+								$fileName = end($path);
 
-							$scp->get($ldbValue . $fileName, $this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $fileName);
+								$scp->get($ldbValue . $fileName, $this->backupPath . $this->backupFilename . $ldbDir . $ldbLastDir . $fileName);
+							}
 						}
 					}
 				}
@@ -293,27 +386,42 @@ class Riak {
 		$checkStrongConDirCommand = '[ -d ' . $this->strongConsistencyPath . ' ] && echo "1"';
 		$checkStrongConDir = $ssh->exec($checkStrongConDirCommand);
 		if (trim($checkStrongConDir) == 1) {
-
 			$SCPath = explode("/", rtrim($this->strongConsistencyPath, "/"));
 			$SCDir = end($SCPath);
 			$SCDir = rtrim($SCDir, "/") . "/";
 
-			if (!is_dir($this->backupPath . $this->backupFilename . $SCDir)) {
-				mkdir($this->backupPath . $this->backupFilename . $SCDir);
-			}
+			if ($this->remoteCompress != false) {
+				$backupTmpName = uniqid();
 
-			$SCFilesCommand = "find $this->strongConsistencyPath -maxdepth 1 -type f";
+				if ($this->remoteCompress == "tar.gz") {
+					$remoteCompressCommand = 'tar czf ' . $backupTmpName . '.tar.gz ' . $this->strongConsistencyPath . ' && echo "done"';
+					$remoteCompress = $ssh->exec($remoteCompressCommand);
 
-			$SCOutput = explode("\n", $ssh->exec($SCFilesCommand));
+					if (strpos(trim($remoteCompress), 'done') !== false) {
+						$scp->get($backupTmpName . '.tar.gz', $this->backupPath . $this->backupFilename . rtrim($SCDir, "/") . '.tar.gz');
+					}
 
-			foreach ($SCOutput as $SCFile) {
-				if (strlen($SCFile) < 3 || substr($SCFile, 0, 1) == '.') {
-					continue;
-				} else {
-					$path = explode("/", $SCFile);
-					$fileName = end($path);
+					$ssh->exec("\\rm " . $backupTmpName . '.tar.gz');
+				}
+			} else {
 
-					$scp->get($this->strongConsistencyPath . $fileName, $this->backupPath . $this->backupFilename . $SCDir . $fileName);
+				if (!is_dir($this->backupPath . $this->backupFilename . $SCDir)) {
+					mkdir($this->backupPath . $this->backupFilename . $SCDir);
+				}
+
+				$SCFilesCommand = "find $this->strongConsistencyPath -maxdepth 1 -type f";
+
+				$SCOutput = explode("\n", $ssh->exec($SCFilesCommand));
+
+				foreach ($SCOutput as $SCFile) {
+					if (strlen($SCFile) < 3 || substr($SCFile, 0, 1) == '.') {
+						continue;
+					} else {
+						$path = explode("/", $SCFile);
+						$fileName = end($path);
+
+						$scp->get($this->strongConsistencyPath . $fileName, $this->backupPath . $this->backupFilename . $SCDir . $fileName);
+					}
 				}
 			}
 		}
@@ -325,10 +433,76 @@ class Riak {
 		 * *
 		 * *
 		 */
-		$startCommand = "riak start";
-		$ssh->exec($startCommand);
+		$this->switchRemote(1);
 
 		return true;
+	}
+
+	/**
+	 * Start or stop remote RIAK
+	 * @param  integer $state Start or Stop
+	 * @return bool
+	 */
+	private function switchRemote($state = 0) {
+		$ssh = new Net_SSH2($this->host, $this->port);
+
+		if ($this->privateKey != "") {
+			$key = new Crypt_RSA();
+
+			if ($this->privateKeyPass != "") {
+				$key->setPassword($this->privateKeyPass);
+			}
+
+			$key->loadKey(file_get_contents($this->privateKey));
+
+			$login = $ssh->login($this->user, $key);
+		} else {
+			$login = $ssh->login($this->user, $this->pass);
+		}
+
+		if (!$login) {
+			$this->result['status'] = 0;
+			$this->result['message'] = "Unable to login on SSH!";
+
+			return false;
+		}
+
+		if ($state) {
+			$command = "riak start";
+		} else {
+			$command = "riak stop";
+		}
+
+		$ssh->exec($command);
+
+		return true;
+	}
+
+	/**
+	 * Start or stop local RIAK
+	 * @param  integer $state Start or Stop
+	 * @return bool
+	 */
+	private function switchLocal($state = 0) {
+		if ($state) {
+			$command = "riak start";
+		} else {
+			$command = "riak stop";
+		}
+		$exec = new Process($command);
+
+		$exec->run();
+
+		if (!$exec->isSuccessful()) {
+			$this->result['status'] = 0;
+			$this->result['message'] = $exec->getErrorOutput();
+
+			return $this->result;
+		} else {
+
+			return true;
+
+		}
 	}
 
 }
