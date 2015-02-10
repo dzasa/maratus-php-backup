@@ -7,24 +7,45 @@ use Net_SCP;
 use Net_SSH2;
 use Symfony\Component\Process\Process;
 
+/**
+ * Back up database or databases on local or remote via ssh
+ */
 class Couchdb {
 
+	//ssh access
 	private $host = "localhost";
 	private $port = "22";
 	private $user = "";
 	private $pass = "";
+
+	//use private key when accessing via ssh
 	private $privateKey = "";
 	private $privateKeyPass = "";
+
+	//remote backup or localbackup
 	private $remote = false;
+
+	//database dir on local or remote
 	private $databaseDir = null;
+
+	//backup single database or all databases
 	private $database = "";
+
+	//backup path on local or remote
 	private $backupPath = "";
+
+	//backup file name
 	private $backupFilename = "";
+
+	//backup result
 	private $result = array(
 		'status' => null,
 		'message' => "",
 	);
 
+	/**
+	 * Prepare stuff for some cooking :)
+	 */
 	function __construct($config = array()) {
 
 		if (isset($config['remote']) && $config['remote'] == true) {
@@ -62,14 +83,21 @@ class Couchdb {
 		}
 	}
 
+	/**
+	 * Dump some data
+	 */
 	public function dump() {
+
+		//dump from remote host
 		if (!$this->remote) {
 			$localDumpResult = $this->dumpLocal();
 
 			if (!$localDumpResult) {
 				return $this->result;
 			}
-		} else {
+		}
+		//dump from local
+		else {
 			$remoteDumpResult = $this->dumpRemote();
 
 			if (!$remoteDumpResult) {
@@ -77,6 +105,7 @@ class Couchdb {
 			}
 		}
 
+		//if everything is ok, then prepare result for main backup class
 		$this->result['status'] = 1;
 		$this->result['message'] = "Successful backup of Couchdb in local file: " . $this->backupPath . $this->backupFilename;
 		$this->result['backup_path'] = $this->backupPath;
@@ -88,24 +117,36 @@ class Couchdb {
 		return $this->result;
 	}
 
+	/**
+	 * Local datababe(s) backup
+	 */
 	private function dumpLocal() {
+
+		//do some research on local to find location of databases
 		$couchDbConfigCommand = 'couch-config --db-dir';
 		$couchDbConfig = new Process($couchDbConfigCommand);
 
 		$couchDbConfig->run();
 
+		//we couldn't find path, just return error
 		if (!$couchDbConfig->isSuccessful()) {
 			$this->result['status'] = 0;
 			$this->result['message'] = $couchDbConfig->getErrorOutput();
 
 			return $this->result;
 		}
+
+		//set database local directory
 		$this->databaseDir = trim($couchDbConfig->getOutput());
 		$this->databaseDir = rtrim($this->databaseDir, "/") . "/";
 
 		$filesystem = new \Symfony\Component\Filesystem\Filesystem();
+
+		//backup single database
 		if ($this->database != '') {
 
+			//check if database exists with extra check if extension wasnt set
+			//in other case return error if everything fails
 			if (!$filesystem->exists($this->databaseDir . $this->database)) {
 				if (!$filesystem->exists($this->databaseDir . $this->database . ".couch")) {
 					$this->result['status'] = 0;
@@ -117,8 +158,11 @@ class Couchdb {
 				}
 			}
 
+			//copy our database to top backup path
 			$filesystem->copy($this->databaseDir . $this->database, $this->backupPath . $this->backupFilename);
-		} else {
+		}
+		//we backup all database we can find
+		else {
 			$filesystem->mkdir($this->backupPath . $this->backupFilename);
 
 			$copyAllDatabasesCommand = 'cp -Ra ' . $this->databaseDir . '. ' . $this->backupPath . $this->backupFilename;
@@ -126,6 +170,7 @@ class Couchdb {
 
 			$copyAllDatabases->run();
 
+			//if backup fails return error with some extra info
 			if (!$copyAllDatabases->isSuccessful()) {
 				$this->result['status'] = 0;
 				$this->result['message'] = $copyAllDatabases->getErrorOutput();
@@ -137,23 +182,33 @@ class Couchdb {
 		return true;
 	}
 
+	//getting remote datase(s)
 	private function dumpRemote() {
+
+		//set basic ssh
 		$ssh = new Net_SSH2($this->host, $this->port);
 
+		//check if we should use private key
 		if ($this->privateKey != "") {
 			$key = new Crypt_RSA();
 
+			//ad if private key is password protected
 			if ($this->privateKeyPass != "") {
 				$key->setPassword($this->privateKeyPass);
 			}
 
+			//load private key
 			$key->loadKey(file_get_contents($this->privateKey));
 
+			//and do final login
 			$login = $ssh->login($this->user, $key);
 		} else {
+
+			//do login with user and pass only
 			$login = $ssh->login($this->user, $this->pass);
 		}
 
+		//if login fails return error
 		if (!$login) {
 			$this->result['status'] = 0;
 			$this->result['message'] = "Unable to login on SSH!";
@@ -161,6 +216,7 @@ class Couchdb {
 			return false;
 		}
 
+		//find database location on remote host
 		$couchDbConfigCommand = "couch-config --db-dir";
 		$ssh->write($couchDbConfigCommand . "\n");
 		$output = explode("\n", $ssh->read("couchdb"));
@@ -168,10 +224,14 @@ class Couchdb {
 		$databaseDir = end($output);
 		$this->databaseDir = rtrim($databaseDir, "/") . "/";
 
+		//prepare scp to take our database(s) from remote host
 		$scp = new Net_SCP($ssh);
 
+		//backup single database
 		if ($this->database != '') {
 
+			//do some extra check with database extention while checking if database exist
+			//otherwise return error
 			if (!$scp->get($this->databaseDir . $this->database, $this->backupPath . $this->backupFilename)) {
 				if (!$scp->get($this->databaseDir . $this->database . ".couch", $this->backupPath . $this->backupFilename)) {
 					$this->result['status'] = 0;
@@ -180,12 +240,17 @@ class Couchdb {
 					return $this->result;
 				}
 			}
-		} else {
+		}
+		//backup all databases from remote host
+		else {
+
+			//get list of database to download
 			$this->backupFilename = rtrim($this->backupFilename, "/") . "/";
 			$couchDbConfigCommand = "ls -a " . $this->databaseDir;
 			$output = explode("\n", $ssh->exec($couchDbConfigCommand));
 			$filesToDownload = [];
 
+			//prepare list to download, clean it a lil bit :)
 			foreach ($output as $oValue) {
 				if (strlen($oValue) < 3 || substr($oValue, 0, 1) == "_" || substr($oValue, 0, 1) == '.') {
 					continue;
@@ -194,10 +259,12 @@ class Couchdb {
 				}
 			}
 
-			if (!is_dir($this->backupPath . $this->backupName)) {
-				mkdir($this->backupPath . $this->backupName);
+			//create backup dir if does't exist
+			if (!is_dir($this->backupPath . $this->backupFilename)) {
+				mkdir($this->backupPath . $this->backupFilename);
 			}
 
+			//transfer all files from remote host to local
 			foreach ($filesToDownload as $remoteFile) {
 				$scp->get($this->databaseDir . $remoteFile, $this->backupPath . $this->backupFilename . $remoteFile);
 			}
