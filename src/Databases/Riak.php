@@ -9,19 +9,46 @@ use Symfony\Component\Process\Process;
 
 class Riak {
 
+	//remote ssh host
 	private $host = "localhost";
+
+	//remote ssh port
 	private $port = "22";
+
+	//remote ssh username
 	private $user = "";
+
+	//remote ssh password
 	private $pass = "";
+
+	//remote ssh private key
 	private $privateKey = "";
+
+	//remote ssh private key password
 	private $privateKeyPass = "";
+
+	//remote or local backup
 	private $remote = false;
+
+	//path to bitcask files
 	private $bitcaskPath = "";
+
+	//path to leveldb files
 	private $levelDbPath = "";
+
+	//path to strongConsistencyPath files
 	private $strongConsistencyPath = "";
+
+	//enable remote compression
 	private $remoteCompress = "tar.gz";
+
+	//backup path
 	private $backupPath = "";
+
+	//file name of the backup
 	private $backupFilename = "";
+
+	//backup result
 	private $result = array(
 		'status' => null,
 		'message' => "",
@@ -75,18 +102,23 @@ class Riak {
 
 		$this->backupPath = $config['backup_path'];
 
-		$this->backupFilename = "all-databases-" . date("Y-m-d-H-i-s");
-		$this->backupName = "all-databases-" . date("Y-m-d-H-i-s");
+		$this->backupFilename = "riak-" . date("Y-m-d-H-i-s");
+		$this->backupName = "riak-" . date("Y-m-d-H-i-s");
 	}
 
+	//backup our databases
 	public function dump() {
+
+		//backup remote files
 		if (!$this->remote) {
 			$localDumpResult = $this->dumpLocal();
 
 			if (!$localDumpResult) {
 				return $this->result;
 			}
-		} else {
+		}
+		//remote backup
+		else {
 			$remoteDumpResult = $this->dumpRemote();
 
 			if (!$remoteDumpResult) {
@@ -94,6 +126,7 @@ class Riak {
 			}
 		}
 
+		//set and return backup result
 		$this->result['status'] = 1;
 		$this->result['message'] = "Successful backup of RIAK in local file: " . $this->backupPath . $this->backupFilename;
 		$this->result['backup_path'] = $this->backupPath;
@@ -169,7 +202,12 @@ class Riak {
 		}
 
 		/**
+		 *
+		 *
 		 * Start RIAK again
+		 *
+		 *
+		 *
 		 */
 		$this->switchLocal(1);
 
@@ -179,20 +217,27 @@ class Riak {
 	private function dumpRemote() {
 		$ssh = new Net_SSH2($this->host, $this->port);
 
+		//assign privatekey is set
 		if ($this->privateKey != "") {
 			$key = new Crypt_RSA();
 
+			//assign private key password if set
 			if ($this->privateKeyPass != "") {
 				$key->setPassword($this->privateKeyPass);
 			}
 
+			//load private key
 			$key->loadKey(file_get_contents($this->privateKey));
 
+			//do login
 			$login = $ssh->login($this->user, $key);
 		} else {
+
+			//do login
 			$login = $ssh->login($this->user, $this->pass);
 		}
 
+		//unable to login
 		if (!$login) {
 			$this->result['status'] = 0;
 			$this->result['message'] = "Unable to login on SSH!";
@@ -229,6 +274,7 @@ class Riak {
 			$bcDir = end($bcPath);
 			$bcDir = rtrim($bcDir, "/") . "/";
 
+			//compress our remote files
 			if ($this->remoteCompress != false) {
 				$backupTmpName = uniqid();
 

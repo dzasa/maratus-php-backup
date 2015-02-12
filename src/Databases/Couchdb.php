@@ -8,7 +8,7 @@ use Net_SSH2;
 use Symfony\Component\Process\Process;
 
 /**
- * Back up database or databases on local or remote via ssh
+ * Back up couchdb database or databases on local or remote via ssh
  */
 class Couchdb {
 
@@ -31,7 +31,7 @@ class Couchdb {
 	//backup single database or all databases
 	private $database = "";
 
-	//backup path on local or remote
+	//backup path on local
 	private $backupPath = "";
 
 	//backup file name
