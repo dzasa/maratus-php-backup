@@ -12,6 +12,7 @@ use Dzasa\MaratusPhpBackup\Databases\Mysql as MaratusMysql;
 use Dzasa\MaratusPhpBackup\Databases\Postgresql as MaratusPostgresql;
 use Dzasa\MaratusPhpBackup\Databases\Redis as MaratusRedis;
 use Dzasa\MaratusPhpBackup\Databases\Riak as MaratusRiak;
+use Dzasa\MaratusPhpBackup\Databases\Sqlite as MaratusSqlite;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -111,6 +112,13 @@ class MaratusBackup {
 		if (isset($config['type']) && $config['type'] == strtolower('riak')) {
 			$this->databases[] = new MaratusRiak($config);
 		}
+
+		/**
+		 * Process sqlite backup part
+		 */
+		if (isset($config['type']) && $config['type'] == strtolower('sqlite')) {
+			$this->databases[] = new MaratusSqlite($config);
+		}
 	}
 
 	/**
@@ -182,6 +190,8 @@ class MaratusBackup {
 					$this->prepareForStoring("redis", $databaseBackupResult);
 				} else if ($db instanceof MaratusRiak) {
 					$this->prepareForStoring("riak", $databaseBackupResult);
+				} else if ($db instanceof MaratusSqlite) {
+					$this->prepareForStoring("sqlite", $databaseBackupResult);
 				} else {
 					continue;
 				}
