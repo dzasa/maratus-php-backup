@@ -1,7 +1,7 @@
 Maratus PHP Backup
 ===================
 
-Backup more types of databases, local files and store them on locally, ftp, google drive, dropbox etc.
+Backup more types of databases, local files and store them on local, ftp, google drive, dropbox etc.
 
 Features
 -------------------
@@ -25,7 +25,7 @@ Features
 
 Documentation and Info
 ------------------------------------
-Full documentation and extra info can be found on GitHub  [ProjectPage]
+Full documentation and extra info Will be on GitHub  [ProjectPage] :)
 
 
 
