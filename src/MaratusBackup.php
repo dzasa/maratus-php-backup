@@ -5,6 +5,7 @@ namespace Dzasa\MaratusPhpBackup;
 use Alchemy\Zippy\Zippy;
 use Dzasa\MaratusPhpBackup\Clients\Copy as MaratusCopy;
 use Dzasa\MaratusPhpBackup\Clients\Dropbox as MaratusDropbox;
+use Dzasa\MaratusPhpBackup\Clients\Ftp as MaratusFtp;
 use Dzasa\MaratusPhpBackup\Clients\GoogleDrive as MaratusGoogleDrive;
 use Dzasa\MaratusPhpBackup\Clients\Local as MaratusLocalStorage;
 use Dzasa\MaratusPhpBackup\Databases\Couchdb as MaratusCouchdb;
@@ -266,6 +267,14 @@ class MaratusBackup {
 				else if (isset($storage['type']) && $storage['type'] == strtolower('local')) {
 
 					$localStorage = new MaratusLocalStorage($storage);
+
+					$storedFile = $localStorage->store($fileToStore['file_path'], $title);
+
+				}
+				//store it on ftp server
+				else if (isset($storage['type']) && $storage['type'] == strtolower('ftp')) {
+
+					$localStorage = new MaratusFtp($storage);
 
 					$storedFile = $localStorage->store($fileToStore['file_path'], $title);
 
