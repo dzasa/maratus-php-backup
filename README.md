@@ -7,19 +7,19 @@ Features
 -------------------
 
 * Available storage clients
-.. Local
-.. FTP
-.. Google Drive
-.. Dropbox
-.. Copy.com
+..* Local
+..* FTP
+..* Google Drive
+..* Dropbox
+..* Copy.com
 * Available databases
-.. MySQL
-.. Postgresql
-.. SQLite
-.. MongoDB
-.. Redis
-.. Riak
-.. CouchDB
+..* MySQL
+..* Postgresql
+..* SQLite
+..* MongoDB
+..* Redis
+..* Riak
+..* CouchDB
 * Sending files in compressed format - ZIP, GNU tar, BSD tar
 * Connect to remote host via SSH with private key(password protected too) or normal username/password, compress and download with SCP
 
