@@ -6,13 +6,13 @@ Backup more types of databases, local files and store them on locally, ftp, goog
 Features
 -------------------
 
-* Available storage clients
+1. Available storage clients
 ..* Local
 ..* FTP
 ..* Google Drive
 ..* Dropbox
 ..* Copy.com
-* Available databases
+2. Available databases
 ..* MySQL
 ..* Postgresql
 ..* SQLite
@@ -20,8 +20,8 @@ Features
 ..* Redis
 ..* Riak
 ..* CouchDB
-* Sending files in compressed format - ZIP, GNU tar, BSD tar
-* Connect to remote host via SSH with private key(password protected too) or normal username/password, compress and download with SCP
+3. Sending files in compressed format - ZIP, GNU tar, BSD tar
+4. Connect to remote host via SSH with private key(password protected too) or normal username/password, compress and download with SCP
 
 Documentation and Info
 ------------------------------------
