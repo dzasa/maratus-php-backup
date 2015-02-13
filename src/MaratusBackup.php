@@ -6,6 +6,7 @@ use Alchemy\Zippy\Zippy;
 use Dzasa\MaratusPhpBackup\Clients\Copy as MaratusCopy;
 use Dzasa\MaratusPhpBackup\Clients\Dropbox as MaratusDropbox;
 use Dzasa\MaratusPhpBackup\Clients\GoogleDrive as MaratusGoogleDrive;
+use Dzasa\MaratusPhpBackup\Clients\Local as MaratusLocalStorage;
 use Dzasa\MaratusPhpBackup\Databases\Couchdb as MaratusCouchdb;
 use Dzasa\MaratusPhpBackup\Databases\Mongodb as MaratusMongodb;
 use Dzasa\MaratusPhpBackup\Databases\Mysql as MaratusMysql;
@@ -29,6 +30,10 @@ class MaratusBackup {
 	 */
 	private $databases = array();
 	private $databaseBackupResult = array();
+
+	//Storages
+	private $storages = array();
+
 	//Google drive configurations
 	private $gDrivesConfigs = array();
 	private $dropboxConfigs = array();
@@ -122,30 +127,12 @@ class MaratusBackup {
 	}
 
 	/**
-	 * Add Google Drive configuration
-	 *
-	 * @param array $config
+	 * Add local or remote storage for later use to store files
+	 * @param array $config Config for storage
 	 */
-	public function addGdrive($config = array()) {
-		$this->gDrivesConfigs[] = $config;
-	}
-
-	/**
-	 * Add Dropbox configuration
-	 *
-	 * @param array $config
-	 */
-	public function addDropbox($config = array()) {
-		$this->dropboxConfigs[] = $config;
-	}
-
-	/**
-	 * Add Copy configuration
-	 *
-	 * @param array $config
-	 */
-	public function addCopy($config = array()) {
-		$this->copyConfigs[] = $config;
+	public function addStorage($config = array()) {
+		//add storage for after processing
+		$this->storages[] = $config;
 	}
 
 	/**
@@ -236,6 +223,9 @@ class MaratusBackup {
 		$filesystem->remove($details['full_path']);
 	}
 
+	/**
+	 * Store all prepared files to remote storage or local
+	 */
 	public function store() {
 
 		foreach ($this->filesToStore as $fileToStore) {
@@ -245,58 +235,51 @@ class MaratusBackup {
 			$name = strtoupper($fileToStore['type']) . "-" . $fileToStore['host'] . "-" . $fileToStore['backup_name'];
 			$description = strtoupper($fileToStore['type']) . " on " . $fileToStore['host'] . " backup file";
 
-			/**
-			 * Store file to Google drive if we have any configs
-			 */
-			foreach ($this->gDrivesConfigs as $gConf) {
-				$drive = new MaratusGoogleDrive($gConf);
+			//store files to remote storage or local
+			foreach ($this->storages as $storage) {
 
-				$storedFile = $drive->store($fileToStore['file_path'], $title, $description);
+				//store it to google drive
+				if (isset($storage['type']) && $storage['type'] == strtolower('gdrive')) {
 
-				if ($storedFile) {
-					$this->filesStored[] = array(
-						'type' => "gdrive",
-						'name' => $name,
-						'file_name' => $title,
-						'download_url' => isset($storedFile->webContentLink) ? $storedFile->webContentLink : "",
-					);
+					$drive = new MaratusGoogleDrive($storage);
+
+					$storedFile = $drive->store($fileToStore['file_path'], $title, $description);
+
 				}
-			}
+				//store it to dropbox
+				else if (isset($storage['type']) && $storage['type'] == strtolower('dropbox')) {
 
-			/**
-			 * Store file to Dropbox if we have any configs
-			 */
-			foreach ($this->dropboxConfigs as $dBoxConfig) {
-				$dBox = new MaratusDropbox($dBoxConfig);
+					$dBox = new MaratusDropbox($storage);
 
-				$storedFile = $dBox->store($fileToStore['file_path'], $title);
+					$storedFile = $dBox->store($fileToStore['file_path'], $title);
 
-				if ($storedFile) {
-					$this->filesStored[] = array(
-						'type' => "dropbox",
-						'name' => $name,
-						'file_name' => $title,
-						'download_url' => isset($storedFile['path']) ? $storedFile['path'] : "",
-					);
 				}
-			}
+				//store it to copy.com
+				else if (isset($storage['type']) && $storage['type'] == strtolower('copy')) {
 
-			/**
-			 * Store file to Copy if we have any configs
-			 */
-			foreach ($this->copyConfigs as $copyConfig) {
-				$copy = new MaratusCopy($copyConfig);
+					$copy = new MaratusCopy($storage);
 
-				$storedFile = $copy->store($fileToStore['file_path'], $title);
+					$storedFile = $copy->store($fileToStore['file_path'], $title);
 
-				if ($storedFile) {
-					$this->filesStored[] = array(
-						'type' => "copy",
-						'name' => $name,
-						'file_name' => $title,
-						'download_url' => isset($storedFile->path) ? $storedFile->path : "",
-					);
 				}
+				//store it to local place
+				else if (isset($storage['type']) && $storage['type'] == strtolower('local')) {
+
+					$localStorage = new MaratusLocalStorage($storage);
+
+					$storedFile = $localStorage->store($fileToStore['file_path'], $title);
+
+				}
+
+				//add result
+				$this->filesStored[] = array(
+					'type' => $storage['type'],
+					'name' => $name,
+					'file_name' => $title,
+					'description' => $description,
+					'storege_result' => is_object($storedFile) ? (array) $storedFile : $storedFile,
+				);
+
 			}
 
 			/**
@@ -307,10 +290,12 @@ class MaratusBackup {
 		}
 	}
 
+	//return full result from all databases backup
 	public function getDatabaseBackupResult() {
 		return $this->databaseBackupResult;
 	}
 
+	//return full result of storage backup
 	public function getStorageBackupResult() {
 		return $this->filesStored;
 	}
