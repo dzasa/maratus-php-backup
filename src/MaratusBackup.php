@@ -20,7 +20,7 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * MaratusBackup
  *
- * Backup dufferent databases using FTP, Local storage, Online file storage like Google Drive, Dropbox
+ * Backup different databases using FTP, Local storage, Online file storage like Google Drive, Dropbox
  *
  * @author Jasenko Rakovic <nacunik@gmail.com>
  */
@@ -228,7 +228,7 @@ class MaratusBackup {
 	/**
 	 * Store all prepared files to remote storage or local
 	 */
-	public function store() {
+	private function store() {
 
 		foreach ($this->filesToStore as $fileToStore) {
 			$storedFile = null;
