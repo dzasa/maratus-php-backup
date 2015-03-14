@@ -1,10 +1,10 @@
 {
     "name": "dzasa/maratus-php-backup",
-    "description": "Backup MySQL database using Email, FTP, Local storage, Online file storage like Google Drive, Dropbox",
+    "description": "Backup different types databases(Couchdb, MongoDB, MySQL, PostgreSQL, Redis, Riak, SQLite) on local or remote to Google Drive, Dropbox, Copy, FTP etc.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["php", "backup", "mysql", "database"],
-    "homepage": "http://github.com/dzasa/maratus-php-backup",
+    "keywords": ["maratus","php", "backup", "mysql", "database", "google drive", "dropbox", "copy", "ftp", "ssh", "remote", "archive", "compress", "couchdb", "mongodb", "mysql", "postgresql", "redis", "riak", "sqlite"],
+    "homepage": "http://dzasa.github.io/maratus-php-backup/",
     "autoload": {
         "psr-4": {
             "Dzasa\\MaratusPhpBackup\\": "src"
