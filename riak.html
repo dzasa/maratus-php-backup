@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="sb-init" lang="en">
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!-- Meta -->
+    <meta charset="utf-8">
+    <title>Maratus PHP Backup</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="stylesheets/bootstrap.css">
+    <link rel="stylesheet" href="stylesheets/slidebars.css">
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/tomorrow.css">
+    <!-- Shims -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+</head>
+
+<body data-twttr-rendered="true" id="top">
+    <!-- Navbar -->
+    <div id="navigation">&nbsp;</div>
+    <!-- Site -->
+    <div id="sb-site">
+        <!-- Site -->
+        <div class="container">
+            <div class="row">
+                <div id="content" class="col-xs-12 col-sm-9">
+                    <!-- Download -->
+                    <div id="download">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <h1>Backup Riak</h1>
+                            </div>
+                            <!-- /.col-xs-12 -->
+                        </div>
+                        <!-- /.row -->
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <p class="lead">You can backup local or remote Redis full backup of bitcask files, leveldb files and strong consistency files. For remote backup, SSH connection is used. As Riak has lot of files, compression on remote backup can be turned on and you can use TAR.GZ or ZIP</p>
+                                <p><code>NOTE: Riak must be turned off before any backup can be made and turned on after backup. We will do it for you.</code>
+                                </p>
+                                <p><code>NOTE: If you are using remote compression, TAR or ZIP support must be installed on remote host.</code>
+                                </p>
+                            </div>
+                            <!-- /.col-xs-12 -->
+                        </div>
+                        <!-- /.row -->
+                    </div>
+                    <!-- /#download -->
+                    <!-- Basic Usage -->
+                    <div id="basic-usage">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <h2>Options?</h2>
+                            </div>
+                            <!-- /.col-xs-12 -->
+                        </div>
+                        <!-- /.row -->
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <ul class="signatures">
+                                    <ul>
+                                        <li>
+                                            <div><strong>remote</strong>
+                                            </div>
+                                            <div>Type: <code>bool</code>
+                                            </div>
+                                            <div>Backup local or remote database(s)</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>host</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is host to backup database(s) from using SSH protocol.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>port</strong>
+                                            </div>
+                                            <div>Type: <code>int</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is SSH port.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>user</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is SSH username.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>pass</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is SSH password.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>private_key</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is path to private key.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>private_key_pass</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>If remote is set to TRUE, this is private key password.</div>
+                                        </li>
+                                        <li>
+                                            <div><strong>bitcask_path</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>Path to Bitcask files. NOTE: Default paths can be found on Riak docs site <a target="_blank" href="http://docs.basho.com/riak/latest/ops/running/backups/">Here</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div><strong>leveldb_path</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>Path to LevelDB files. NOTE: Default paths can be found on Riak docs site <a target="_blank" href="http://docs.basho.com/riak/latest/ops/running/backups/">Here</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div><strong>strong_consistency_path</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>Path to Strong Consistency Data files. NOTE: Default paths can be found on Riak docs site <a target="_blank" href="http://docs.basho.com/riak/latest/ops/running/backups/">Here</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div><strong>remote_compress</strong>
+                                            </div>
+                                            <div>Type: <code>string</code>
+                                            </div>
+                                            <div>Use remote compression to receive files a lot faster. NOTE: You can use tar.gz or zip as value.</div>
+                                        </li>
+                                    </ul>
+                                </ul>
+
+                                <h2>Example 1</h2>
+                                <p class="lead">Backup remote Riak files using SSH protocol.</p>
+                                <pre><code>$backup = new MaratusBackup();
+
+$riakConfig = array(
+    'type' => 'riak',
+    'remote' => true,
+    'host' => '192.168.1.2',
+    'user' => 'root',
+    'private_key' => '/home/user/.ssh/id_rsa',
+    'private_key_pass' => '123456',
+    'bitcask_path' => '/var/lib/riak/bitcask',
+    'leveldb_path' => '/var/lib/riak/leveldb',
+    'strong_consistency_path' => '/var/lib/riak/ensembles',
+    'remote_compress' => 'zip',
+);
+
+$backup->addDatabase($riakConfig);
+
+/**
+ *  .... rest of the code to configure storage, archive etc...
+ */
+                                </code></pre>
+                                <h2>Example 2</h2>
+                                <p class="lead">Backup local files</p>
+                                <pre><code>$backup = new MaratusBackup();
+
+$riakConfig = array(
+    'type' => 'riak',
+    'remote' => false,
+    'bitcask_path' => '/var/lib/riak/bitcask',
+    'leveldb_path' => '/var/lib/riak/leveldb',
+    'strong_consistency_path' => '/var/lib/riak/ensembles'
+);
+
+$backup->addDatabase($redisConfig);
+
+/**
+ *  .... rest of the code to configure storage, archive etc...
+ */
+                                </code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /#content-->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container -->
+    </div>
+    <!-- /#sb-site -->
+    <!-- Slidebars -->
+    <div class="sb-slidebar sb-left"></div>
+    <!-- /.sb-left -->
+    <div style="margin-right: -378px;" class="sb-slidebar sb-right sb-style-overlay"></div>
+    <!-- /.sb-right -->
+    <!-- Scripts -->
+    <!-- jQuery -->
+    <script src="javascripts/jquery.js"></script>
+    <!-- Bootstrap -->
+    <script src="javascripts/bootstrap.js"></script>
+    <!-- Slidebars -->
+    <script src="javascripts/slidebars.js"></script>
+    <!-- highlight -->
+    <script src="javascripts/highlight.pack.js"></script>
+    <!--- Main site js -->
+    <script src="javascripts/site.js"></script>
+    <script>
+    hljs.initHighlightingOnLoad();
+    </script>
+</body>
+
+</html>
