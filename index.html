@@ -41,7 +41,7 @@
                             <div class="col-xs-12">
                                 <h1>Maratus PHP Backup</h1>
                                 <p class="lead">Backup different types of databases on Google Drive, Dropbox, FTP etc...</p>
-                                <p>Maratus is here because of the idea to give something back to open source community and after making first composer package <a href="https://github.com/dzasa/php-open-exchange-rates">Open Exchange Rates</a>
+                                <p>Maratus is here because of the idea to give something back to open source community and after making first composer package <a href="https://github.com/dzasa/php-open-exchange-rates">Open Exchange Rates</a>.
                                 </p>
                                 <p>I wanted to make something that I can use for all my databases and even local files to backup, compress and send it to safe place, and do everything in easy way using cron.</p>
                             </div>
@@ -63,7 +63,7 @@
                             <div class="col-xs-12">
                                 <p>Country where I always wanted to live was Australia. Sunny, warm and beautiful country with a nature you must love. Have never been there but who knows I might go there one day :). </p>
                                 <p>Hmm, enough of it, where is definition of Maratus php backup :D?</p>
-                                <p>Maratus is one of the most beautiful Australian spiders, you can read everything on <a href="http://en.wikipedia.org/wiki/Maratus" target="_blank">Wiki</a>. This package as of central place to backup and spread all files to cloud storage can be seen as Appearance of the spider with all its legs. Yeah, funny, but I see it like that :D</p>
+                                <p>Maratus is one of the most beautiful Australian spiders, you can read everything on <a href="http://en.wikipedia.org/wiki/Maratus" target="_blank">Wiki</a>. This package as of central place to backup and spread all files to cloud storage can be seen as Appearance of the spider with all its legs. Yeah, funny, but I see it like that :D.</p>
                             </div>
                             <!-- /.col-xs-12 -->
                         </div>
@@ -132,60 +132,7 @@
                     </div>
                 </div>
                 <!-- Basic Usage -->
-                <div id="basic-usage">
-                    <div class="row">
-                        <div class="col-xs-12">
-                            <h2>Basic Example?</h2>
-                        </div>
-
-                        <!-- /.col-xs-12 -->
-                    </div>
-                    <!-- /.row -->
-                    <div class="row">
-                        <div class="col-xs-12">
-                            <pre>
-                                  <code>use Dzasa\MaratusPhpBackup\MaratusBackup;
-
-$backup = new MaratusBackup();
-
-//Define config for MySQL database
-$dbConfig2 = array(
-   'type' => 'mysql',
-   'host' => "localhost",
-   'port' => 3306,
-   'user' => 'root',
-   'pass' => 'root',
-   'database' => 'db1' //if left empty, all database will be backed up
-);
-
-//Add config into database config queue
-$backup->addDatabase($dbConfig2);
-
-//Define Google Drive config for storing backup files
-$gDriveConfig = array(
-   'type' => 'gdrive',
-   'client_id' => '',
-   'client_secret' => '',
-   'token_file' => 'gdrive-token.json', //file name where we will save token and other stuff for future use
-   'auth_code' => ''
-);
-
-//Add config into storage queue
-$backup->addStorage($gDriveConfig);
-
-//Set archive type
-$backup->backup("tar.bz2");
-
-//Get result info from all database backups
-$databasesResult = $backup->getDatabaseBackupResult();
-
-//Get result info from all storages
-$backupStorageResult = $backup->getStorageBackupResult();
-</code>
-                                </pre>
-                        </div>
-                    </div>
-                </div>
+                
                 <div id="to-do">
                     <div class="row">
                         <div class="col-xs-12">
