@@ -74,6 +74,8 @@
                             <div class="col-xs-12">
                                 <h2>Features</h2>
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-xs-12">
                                 <ol class="task-list">
                                     <li>Available storage clients
@@ -104,43 +106,44 @@
                             </div>
                         </div>
                     </div>
-                    <!-- /#download -->
-                    <div id="requirements">
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <h2>Requirements?</h2>
-                            </div>
-                            <!-- /.col-xs-12 -->
+                </div>
+                <!-- /#download -->
+                <div id="requirements">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h2>Requirements?</h2>
                         </div>
-                        <!-- /.row -->
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <ul class="task-list">
-                                    <li>PHP Zippy</li>
-                                    <li>Copy.com PHP SDK</li>
-                                    <li>Dropbox SDK</li>
-                                    <li>Google API Client</li>
-                                    <li>PHPSeclib</li>
-                                    <li>Symfony Filesystem</li>
-                                    <li>Symfony Proccess</li>
-                                    <li>Guzzle</li>
-                                </ul>
-                            </div>
+                        <!-- /.col-xs-12 -->
+                    </div>
+                    <!-- /.row -->
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <ul class="task-list">
+                                <li>PHP Zippy</li>
+                                <li>Copy.com PHP SDK</li>
+                                <li>Dropbox SDK</li>
+                                <li>Google API Client</li>
+                                <li>PHPSeclib</li>
+                                <li>Symfony Filesystem</li>
+                                <li>Symfony Proccess</li>
+                                <li>Guzzle</li>
+                            </ul>
                         </div>
                     </div>
-                    <!-- Basic Usage -->
-                    <div id="basic-usage">
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <h2>Basic Example?</h2>
-                            </div>
-
-                            <!-- /.col-xs-12 -->
+                </div>
+                <!-- Basic Usage -->
+                <div id="basic-usage">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h2>Basic Example?</h2>
                         </div>
-                        <!-- /.row -->
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <pre>
+
+                        <!-- /.col-xs-12 -->
+                    </div>
+                    <!-- /.row -->
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <pre>
                                   <code>use Dzasa\MaratusPhpBackup\MaratusBackup;
 
 $backup = new MaratusBackup();
@@ -180,35 +183,35 @@ $databasesResult = $backup->getDatabaseBackupResult();
 $backupStorageResult = $backup->getStorageBackupResult();
 </code>
                                 </pre>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="to-do">
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <h2>TODO?</h2>
-                            </div>
-
-                            <!-- /.col-xs-12 -->
-                        </div>
-                        <div class="col-xs-12">
-                            <ol>
-                                <li>Add option to set custom dir in Google Drive, Dropbox or Copy.com. At the moment its save in root folder.</li>
-                                <li>Make Dependency libs list shorter</li>
-                                <li>Add option to backup any local file(s).</li>
-                                <li>Add more types of databases to backup.</li>
-                                <li>Add more storages for backup files.</li>
-                                <li>Add SFTP and SCP support as backup storage.</li>
-                                <li>Write some unit tests, I am lazy now :D</li>
-                            </ol>
                         </div>
                     </div>
                 </div>
-                <!-- /#content-->
+                <div id="to-do">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <h2>TODO?</h2>
+                        </div>
+
+                        <!-- /.col-xs-12 -->
+                    </div>
+                    <div class="col-xs-12">
+                        <ol>
+                            <li>Add option to set custom dir in Google Drive, Dropbox or Copy.com. At the moment its save in root folder.</li>
+                            <li>Make Dependency libs list shorter</li>
+                            <li>Add option to backup any local file(s).</li>
+                            <li>Add more types of databases to backup.</li>
+                            <li>Add more storages for backup files.</li>
+                            <li>Add SFTP and SCP support as backup storage.</li>
+                            <li>Write some unit tests, I am lazy now :D</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
-            <!-- /.row -->
+            <!-- /#content-->
         </div>
-        <!-- /.container -->
+        <!-- /.row -->
+    </div>
+    <!-- /.container -->
     </div>
     <!-- /#sb-site -->
     <!-- Slidebars -->
