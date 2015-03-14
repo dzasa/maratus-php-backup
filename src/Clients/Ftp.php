@@ -83,12 +83,41 @@ class Ftp {
 	 */
 	public function store($fullPath, $filename) {
 
+		if ($this->connection == false) {
+			$result = array(
+				'error' => 1,
+				'message' => "Unable to connect to ftp server!",
+			);
+
+			return $result;
+		}
+
 		//prepare dir path to be valid :)
 		$this->remoteDir = rtrim($this->remoteDir, "/") . "/";
 
 		try {
+
+			$originalDirectory = ftp_pwd($this->connection);
+
+			// test if you can change directory to remote dir
+			// suppress errors in case $dir is not a file or not a directory
+			if (@ftp_chdir($this->connection, $this->remoteDir)) {
+
+				// If it is a directory, then change the directory back to the original directory
+				ftp_chdir($this->connection, $originalDirectory);
+			}
+			// try to make dir
+			else {
+				if (!ftp_mkdir($this->connection, $this->remoteDir)) {
+					$result = array(
+						'error' => 1,
+						'message' => "Remote dir does not exist and unable to create it!",
+					);
+				}
+			}
+
 			//save file to local dir
-			if (ftp_put($this->connection, $this->remoteDir . $filename, $fullPath, FTP_BINARY) == false) {
+			if (!ftp_put($this->connection, $this->remoteDir . $filename, $fullPath, FTP_BINARY)) {
 				$result = array(
 					'error' => 1,
 					'message' => "Unable to send file to ftp server",

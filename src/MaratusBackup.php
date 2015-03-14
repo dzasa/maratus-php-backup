@@ -20,7 +20,7 @@ use Symfony\Component\Filesystem\Filesystem;
 /**
  * MaratusBackup
  *
- * Backup MySQL database using FTP, Local storage, Online file storage like Google Drive, Dropbox
+ * Backup dufferent databases using FTP, Local storage, Online file storage like Google Drive, Dropbox
  *
  * @author Jasenko Rakovic <nacunik@gmail.com>
  */
@@ -58,6 +58,7 @@ class MaratusBackup {
 	 * Array of stored files
 	 */
 	private $filesStored = array();
+
 	//Temp local backup path
 	private $backupPath = "";
 

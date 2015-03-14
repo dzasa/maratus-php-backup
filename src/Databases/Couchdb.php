@@ -66,6 +66,14 @@ class Couchdb {
 			if (isset($config['pass'])) {
 				$this->pass = $config['pass'];
 			}
+
+			if (isset($config['private_key'])) {
+				$this->privateKey = $config['private_key'];
+			}
+
+			if (isset($config['private_key_pass'])) {
+				$this->privateKeyPass = $config['private_key_pass'];
+			}
 		}
 
 		if (isset($config['database'])) {

@@ -19,6 +19,10 @@ class Local {
 	public function __construct($config = array()) {
 
 		$this->saveDir = $config['save_dir'];
+
+		if ($this->saveDir == "") {
+			$this->saveDir = ".";
+		}
 	}
 
 	/**
@@ -28,23 +32,16 @@ class Local {
 	 */
 	public function store($fullPath, $filename) {
 
-		//return error on not set save dir
-		if ($this->saveDir == false) {
-			$result = array(
-				'error' => 1,
-				'message' => "Directory to save is not defined!",
-			);
-
-			return $result;
-		}
 		//dir doesn't exist
-		else if (is_dir($this->saveDir) == false) {
-			$result = array(
-				'error' => 1,
-				'message' => "Directory to save does not exist!",
-			);
+		if (is_dir($this->saveDir) == false) {
+			if (mkdir($this->saveDir, 0755) == false) {
+				$result = array(
+					'error' => 1,
+					'message' => "Directory to save does not exist and cannot be created!",
+				);
 
-			return $result;
+				return $result;
+			}
 		}
 
 		//prepare dir path to be valid :)
